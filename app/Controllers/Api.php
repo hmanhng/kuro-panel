@@ -833,6 +833,42 @@ class Api extends BaseController
     }
 
     /**
+     * Reset key devices only (clear devices, keep expiration date)
+     * POST /api/keys/{id}/resetDevices
+     */
+    public function resetDevices($id = null)
+    {
+        if (!$id) {
+            return $this->fail('Key ID required', 400);
+        }
+
+        $key = $this->keysModel->getKeys($id, 'id_keys');
+        if (!$key) {
+            return $this->fail('Key not found', 404);
+        }
+
+        $currentUser = $this->validateToken();
+
+        if (!$currentUser) {
+            return $this->fail('Unauthorized', 401);
+        }
+
+        // Check permission
+        if ($currentUser->level != 1 && $key->registrator != $currentUser->username) {
+            return $this->fail('Not authorized to reset devices for this key', 403);
+        }
+
+        $this->keysModel->update($id, [
+            'devices' => null
+        ]);
+
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Key devices reset successfully'
+        ]);
+    }
+
+    /**
      * Get available games
      * GET /api/games
      */

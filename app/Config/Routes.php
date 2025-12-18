@@ -116,6 +116,7 @@ $routes->group('api', function ($routes) {
 	$routes->put('keys/(:num)', 'Api::updateKey/$1');
 	$routes->delete('keys/(:num)', 'Api::deleteKey/$1');
 	$routes->post('keys/(:num)/reset', 'Api::resetKey/$1');
+	$routes->post('keys/(:num)/resetDevices', 'Api::resetDevices/$1');
 });
 
 
