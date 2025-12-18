@@ -179,6 +179,7 @@ class Api extends BaseController
 
             // 3. Generate NEW Access Token
             $iat = time();
+            $key = getenv('JWT_SECRET');
             $access_ttl = getenv('JWT_TIME_TO_LIVE');
             $refresh_ttl = getenv('JWT_REFRESH_TIME_TO_LIVE');
 
