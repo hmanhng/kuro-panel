@@ -575,11 +575,12 @@ const button = document.querySelector('button'),
                                 }
                                 // ? game-user_key-serial-word di line 15
                                 $real = "$game-$uKey-$sDev-$this->staticWords";
+                                $token = md5($real);
                                 $data = [
                                     'status' => true,
                                     'data' => [
-                                        'real' => $real,
-                                        'token' => md5($real),
+                                        'token' => $token,
+                                        'enckey' => openssl_encrypt("25f708a475f330e805db892fa221690b", 'AES-256-ECB', md5($token . "@Huumanh02")),
                                         'modname' => $userDetails2['modname'],
                                         'mod_status' => $userDetails3['_status'],
                                         'credit' => $userDetails3['_ftext'],
