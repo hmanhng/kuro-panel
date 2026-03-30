@@ -129,6 +129,10 @@
             <!-- Start content -->
             <?= $this->renderSection('content') ?>
 
+        <?php if (isset($user) && ((int) $user->level === 1 || (int) $user->level === 2)): ?>
+          <?= $this->include('Layout/mod_hub_modal') ?>
+        <?php endif; ?>
+
             <!-- End of content -->
         </div>
     </main>

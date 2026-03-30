@@ -428,11 +428,11 @@
 			</div>
 			<div class="ds projects">
 				<h6 title="Number of projects created by the user">Role <i class="fas fa-project-diagram"></i></h6>
-				<p><?php echo $usus; ?></p>
+				<p><?php echo getLevel($user->level); ?></p>
 			</div>
 			<div class="ds posts">
 				<h6 title="Number of posts">Uplink <i class="fas fa-comments"></i></h6>
-				<p> S A A D </p>
+				<p><?php echo !empty($user->uplink) ? esc($user->uplink) : '-'; ?></p>
 			</div>
 		</div>
 		<div class="ds-skill">

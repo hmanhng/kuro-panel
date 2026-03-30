@@ -89,3 +89,16 @@ function getPrice($price, $duration, $bulk_key, $device_max)
     $result = ($ressample * $device_max);
     return ($result <= 0) ? false : $result;
 }
+
+function format_bytes($bytes, $precision = 2)
+{
+    $units = array('B', 'KB', 'MB', 'GB', 'TB');
+
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+
+    $bytes /= pow(1024, $pow);
+
+    return round($bytes, $precision) . ' ' . $units[$pow];
+}

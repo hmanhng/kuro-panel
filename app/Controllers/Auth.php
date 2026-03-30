@@ -125,6 +125,11 @@ class Auth extends BaseController
                         ->get()->getRowArray();
 
                     if ($exp && $sts) {
+                        $this->db->table('users')
+                            ->where('id_users', $cekUser->id_users)
+                            ->set('visit_count', 'COALESCE(visit_count, 0) + 1', false)
+                            ->update();
+
                         session()->set($data);
                         // Send Login Alert (replaced UserMail.php)
                         $this->sendLoginAlert($cekUser);
@@ -281,7 +286,20 @@ class Auth extends BaseController
     {
         $emailId = $this->request->getGet('mail');
         $token = $this->request->getGet('token');
-        $password = $this->request->getGet('key');
+        $encodedPassword = $this->request->getGet('key');
+
+        $password = null;
+        if ($encodedPassword) {
+            $b64 = strtr($encodedPassword, '-_', '+/');
+            $padding = strlen($b64) % 4;
+            if ($padding > 0) {
+                $b64 .= str_repeat('=', 4 - $padding);
+            }
+            $decoded = base64_decode($b64, true);
+            if ($decoded !== false) {
+                $password = $decoded;
+            }
+        }
 
         if ($emailId && $token && $password) {
             $time = new \CodeIgniter\I18n\Time;
@@ -294,8 +312,8 @@ class Auth extends BaseController
             if ($user) {
                 $exp_time = $user['exp_date'];
                 if ($timestamp < $exp_time) {
-                    // Hash the password to match login expectation
-                    $hashPassword = create_password($password, true);
+                    // Hash once using the same helper as registration/login flow.
+                    $hashPassword = create_password($password);
 
                     $this->db->table('users')->where('reset_link_token', $token)->update([
                         'password' => $hashPassword,

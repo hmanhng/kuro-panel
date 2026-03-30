@@ -1,4 +1,20 @@
-<?php if (session()->getFlashdata('msgDanger')) : ?>
+<?php if (session()->getFlashdata('error')) : ?>
+    <div class="alert alert-danger fade show" role="alert">
+        <?= esc(session()->getFlashdata('error')) ?>
+    </div>
+<?php elseif (session()->getFlashdata('errors')) : ?>
+    <?php
+        $errors = session()->getFlashdata('errors');
+        if (is_array($errors)) {
+            $errors = implode('<br>', array_map('esc', $errors));
+        } else {
+            $errors = esc($errors);
+        }
+    ?>
+    <div class="alert alert-danger fade show" role="alert">
+        <?= $errors ?>
+    </div>
+<?php elseif (session()->getFlashdata('msgDanger')) : ?>
     <div class="alert alert-danger fade show" role="alert">
         <?= session()->getFlashdata('msgDanger') ?>
     </div>

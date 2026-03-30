@@ -51,6 +51,13 @@
                                                 <i class="bi bi-person-lines-fill"></i> Profile
                                             </a>
                                         </li>
+                                        <?php if ($user->level == 1 || $user->level == 2) : ?>
+                                        <li>
+                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modHubModal">
+                                                <i class="bi bi-controller"></i> Mod Control
+                                            </a>
+                                        </li>
+                                        <?php endif; ?>
                                         
                                     <?php if ($user->level == 1) : ?>
                                         <li class="dropdown-item text-muted">Owner Control</li>
@@ -67,11 +74,6 @@
                                         <li>
                                             <a class="dropdown-item" href="<?= site_url('admin/lib') ?>">
                                                 <i class="bi bi-hammer"></i> Online Lib
-                                            </a>
-                                        </li>
-                                            <li>
-                                            <a class="dropdown-item" href="<?= site_url('Server') ?>">
-                                                <i class="bi bi-controller"></i> Mod Control
                                             </a>
                                         </li>
                                         <li>

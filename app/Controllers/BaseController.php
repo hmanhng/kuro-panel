@@ -3,7 +3,13 @@
 namespace App\Controllers;
 
 use App\Models\CodeModel;
+use App\Models\Feature;
+use App\Models\onoff;
+use App\Models\Server;
+use App\Models\UserModel;
+use App\Models\_ftext;
 use CodeIgniter\Controller;
+use Config\Services;
 use CodeIgniter\HTTP\CLIRequest;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
@@ -69,6 +75,27 @@ class BaseController extends Controller
 	{
 		// Do Not Edit This Line
 		parent::initController($request, $response, $logger);
+
+		$userid = session()->userid;
+		if ($userid) {
+			$userModel = new UserModel();
+			$user = $userModel->getUser($userid);
+
+			if ($user && (((int) $user->level === 1) || ((int) $user->level === 2))) {
+				$renderer = Services::renderer();
+				$serverModel = new Server();
+				$onoffModel = new onoff();
+				$ftextModel = new _ftext();
+				$featureModel = new Feature();
+
+				$renderer->setData([
+					'row' => $serverModel->find(1),
+					'onoff' => $onoffModel->find(1),
+					'ftext' => $ftextModel->find(1),
+					'feature' => $featureModel->find(1),
+				]);
+			}
+		}
 
 		//--------------------------------------------------------------------
 		// Preload any models, libraries, etc, here.

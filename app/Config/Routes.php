@@ -51,7 +51,7 @@ $routes->match(['get', 'post'], 'update', 'User::update');
 $routes->match(['get', 'post'], 'Server', 'User::Server');
 $routes->match(['get'], 'alter', 'Keys::alterUser');
 $routes->match(['get', 'post'], 'lib', 'User::lib');
-
+$routes->get('lib/download/(:num)', 'User::downloadLib/$1');$routes->get('lib/delete/(:num)', 'User::deleteLib/$1');
 
 //
 //testing
@@ -88,6 +88,7 @@ $routes->group('admin', ['filter' => 'admin'], function ($routes) {
 	$routes->match(['get', 'post'], 'create-referral', 'User::ref_index');
 	$routes->match(['get', 'post'], 'manage-users', 'User::manage_users');
 	$routes->match(['get', 'post'], 'lib', 'User::lib');
+	$routes->post('lib/active', 'User::lib');
 	$routes->match(['get', 'post'], 'user/(:num)', 'User::user_edit/$1');
 	$routes->match(['get'], 'user/delete/(:num)', 'User::user_delete/$1');
 	/* --------------------------- Admin API Grouping -------------------------- */

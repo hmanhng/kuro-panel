@@ -9,7 +9,7 @@ class UserModel extends Model
 {
     protected $table = 'users';
     protected $primaryKey = 'id_users';
-    protected $allowedFields = ['username', 'fullname', 'saldo', 'level', 'status', 'uplink', 'password', 'user_ip', 'expiration_date', 'email', 'auth_token'];
+    protected $allowedFields = ['username', 'fullname', 'saldo', 'level', 'status', 'uplink', 'password', 'user_ip', 'visit_count', 'expiration_date', 'email', 'auth_token', 'reset_link_token', 'exp_date'];
     protected $useTimestamps = true;
 
     /*=================================================================*/

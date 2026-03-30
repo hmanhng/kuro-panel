@@ -1,7 +1,3 @@
-<?php
-include('mail.php');
-?>
-
 <?= $this->extend('Layout/Starter') ?>
 
 <?= $this->section('content') ?>

@@ -125,3 +125,6 @@ nb-configuration.xml
 /phpunit*.xml
 /.phpunit.*.cache
 android_app/
+
+# codex
+.codex

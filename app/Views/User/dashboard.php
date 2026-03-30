@@ -54,12 +54,28 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
             font-size: 1em;
         }
     }
+
+    .hover-shadow {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
 </style>
 
 <div class="row">
     <div class="col-lg-12">
         <?= $this->include('Layout/msgStatus') ?>
     </div>
+
+    <!-- Mod Control Hub (Hidden on main screen) -->
+    <?php if (false && ((int) $user->level === 1 || (int) $user->level === 2)): ?>
+    <div class="col-lg-12 mb-4">
+        <!-- Section deliberately hidden per user request to only show via Dashboard# link -->
+    </div>
+    <?php endif; ?>
 
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-primary shadow h-100 py-2">
@@ -213,7 +229,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         IP Address
                         <span class="badge text-dark">
-                            <h5 id="ipadd"></h5>
+                            <h5 class="mb-0"><?= esc($ip_address ?? 'Unknown') ?></h5>
                         </span>
                     </li>
                 </ul>
@@ -221,9 +237,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         Visit No.
-                        <span class="badge text-dark" id="CounterVisitor">
-
-                        </span>
+                        <span class="badge text-dark"><?= (int) ($visit_count ?? 0) ?></span>
                     </li>
                 </ul>
             </div>
@@ -249,9 +263,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                         Visit No.
-                        <span class="badge text-dark" id="CounterVisitor">
-
-                        </span>
+                        <span class="badge text-dark"><?= (int) ($visit_count ?? 0) ?></span>
                     </li>
                 </ul>
             </div>
@@ -262,8 +274,9 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
 
 </div>
 </div>
-<script src="https://code.jquery.com/jquery-3.1.0.min.js"
-    integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+    </div>
+</div>
+
 <script>
     var countDownTimer = new Date("<?php echo "$getDateTime"; ?>").getTime();
     // Update the count down every 1 second
@@ -285,15 +298,6 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
             document.getElementById("exp").innerHTML = "EXPIRED";
         }
     }, 1000);
-</script>
-<script>
-
-
-    $.getJSON("https://api.ipify.org?format=json", function (data) {
-
-        // Setting text of element P with id gfg
-        $("#ipadd").html(data.ip);
-    })
 </script>
 
 <?= $this->endSection() ?>

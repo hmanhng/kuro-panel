@@ -67,6 +67,13 @@ class User extends BaseController
         // Users Count
         $usersCount = $db->table('users')->countAllResults();
 
+        // Current user stats for dashboard widgets
+        $userStats = $db->table('users')
+            ->select('visit_count')
+            ->where('id_users', $this->userid)
+            ->get()
+            ->getRowArray();
+
         // Current User Expiration
         // Already available in $this->user? 
         // dashboard.php did: SELECT expiration_date FROM users WHERE id_users = ...
@@ -78,6 +85,12 @@ class User extends BaseController
         // Email Alert Logic (from mail.php)
         $this->sendAdminAlert();
 
+        // Mod Controller Data
+        $serverModel = new Server();
+        $onoffModel = new \App\Models\onoff();
+        $ftextModel = new \App\Models\_ftext();
+        $featureModel = new \App\Models\Feature();
+
         $data = [
             'title' => 'Dashboard',
             'user' => $this->user,
@@ -88,7 +101,26 @@ class User extends BaseController
             'active_keys' => $active, // used to be fetched as 'devices' (count)
             'inactive_keys' => $inactive,
             'users_count' => $usersCount,
+            'ip_address' => $this->request->getIPAddress(),
+            'visit_count' => (int) ($userStats['visit_count'] ?? 0),
+            'row' => $serverModel->find(1),
+            'onoff' => $onoffModel->find(1),
+            'ftext' => $ftextModel->find(1),
+            'feature' => $featureModel->find(1),
         ];
+
+        // Handle Mod Form Submissions (moved from Server())
+        if (($this->user->level == 1) || ($this->user->level == 2)) {
+            if ($this->request->getPost('modname_form')) return $this->modname_act();
+            if ($this->request->getPost('status_form')) return $this->status_act();
+            if ($this->request->getPost('safemode_form')) return $this->safemode_act();
+            if ($this->request->getPost('floating_form')) return $this->floating_act();
+            if ($this->request->getPost('_ftext_form') || $this->request->getPost('_ftext')) return $this->_ftext_act();
+        }
+        if ($this->user->level == 1) {
+            if ($this->request->getPost('feature_form')) return $this->feature_act();
+        }
+
         return view('User/dashboard', $data);
     }
 
@@ -396,10 +428,8 @@ class User extends BaseController
     public function settings()
     {
         $user = $this->user;
-        if (($user->level == 1) || ($user->level == 2)) {
-            if ($this->request->getPost('password_form'))
-                return $this->passwd_act();
-        }
+        if ($this->request->getPost('password_form'))
+            return $this->passwd_act();
         /*if ($this->request->getPost('fullname_form'))
             return $this->fullname_act();*/
         if ($this->request->getPost('email_form'))
@@ -422,118 +452,174 @@ class User extends BaseController
             return redirect()->to('dashboard')->with('msgWarning', 'Access Denied!');
         }
 
-        $validation = Services::validation();
         $db = \Config\Database::connect();
+        $isAjax = $this->request->isAJAX();
+
+        if ($this->request->getMethod() === 'post' && $this->request->getPost('set_active_lib_id')) {
+            $libId = (int) $this->request->getPost('set_active_lib_id');
+            if ($libId < 1) {
+                return redirect()->back()->with('msgDanger', 'Invalid library selection.');
+            }
+
+            $exists = $db->table('lib')->where('id', $libId)->get()->getRowArray();
+            if (!$exists) {
+                return redirect()->back()->with('msgDanger', 'Library not found.');
+            }
+
+            $db->table('lib')->set('is_active', 0)->update();
+            $db->table('lib')->where('id', $libId)->update(['is_active' => 1]);
+            return redirect()->back()->with('msgSuccess', 'Active library updated successfully.');
+        }
 
         if ($this->request->getMethod() === 'post') {
-            // Handle File Upload
-            // input name 'libfile' from Admin/lib.php (or 'myfile' if using public/lib.php form, enforcing libfile)
             $file = $this->request->getFile('libfile');
 
-            if ($file && $file->isValid() && !$file->hasMoved()) {
-                $extension = $file->getExtension();
-                if ($extension !== 'so') {
-                    return redirect()->back()->with('msgDanger', 'Only Upload MOD SERVER LIB (.so)!');
+            if (!$file) {
+                if ($isAjax) {
+                    return $this->ajaxError('No file received.');
                 }
+                return redirect()->back()->with('msgDanger', 'No file received.');
+            }
 
-                if ($file->getSize() > 100000000) { // 100MB
-                    return redirect()->back()->with('msgDanger', 'File is too large (>100MB).');
+            if (!$file->isValid() || $file->hasMoved()) {
+                if ($isAjax) {
+                    return $this->ajaxError('Upload error: ' . $file->getErrorString());
                 }
+                return redirect()->back()->with('msgDanger', 'Upload error: ' . $file->getErrorString());
+            }
 
-                $filename = $file->getName();
-                $destinationDir = FCPATH . 'TumharaPapaDARK/';
-                if (!is_dir($destinationDir)) {
-                    mkdir($destinationDir, 0777, true);
+            $extension = strtolower($file->getExtension());
+            if ($extension !== 'so') {
+                if ($isAjax) {
+                    return $this->ajaxError('Only Upload MOD SERVER LIB (.so)!');
                 }
+                return redirect()->back()->with('msgDanger', 'Only Upload MOD SERVER LIB (.so)!');
+            }
 
-                if ($file->move($destinationDir, $filename)) {
-                    // Logic from public/lib.php:
-                    // $realsize = formatBytes($size)...
-                    // DB Insert: INSERT INTO lib (id, file, file_type, file_size, time) VALUES ('++$x', ...)
-                    // 'id' seems to be auto-increment or '++$x' (string?). 
-                    // 'lib' table schema? public/lib.php used '++$x' where $x="1".
-                    // 'file_type' used as $destination ('TumharaPapaDARK/filename')
-                    // 'file_size' formatted string.
-                    // 'time' filemtime($filename) -> timestamp.
+            $filename = $file->getName();
+            $newName = time() . '_' . $filename; // Unique name
+            $destinationDir = FCPATH . 'uploads/libs/';
+            
+            if (!is_dir($destinationDir)) {
+                mkdir($destinationDir, 0777, true);
+            }
 
-                    // Let's assume 'id' column is auto-increment.
-                    // We will update the row with id=1?
-                    // app/Views/Admin/lib.php fetches id=1. public/lib.php INSERTs new row?
-                    // app/Views/Admin/lib.php code: $sql21 = "SELECT * FROM lib WHERE id='1'";
-                    // public/lib.php code: INSERT INTO lib ... VALUES ('++$x', ...). 
-                    // This is confusing. public/lib.php seems to insert new entries. Admin/lib.php view shows only id=1.
-                    // If the intention is to update the single "Online Lib", I should UPDATE id=1.
-                    // If public/lib.php was adding historical records, then OK.
-                    // BUT Admin/lib.php only shows "CURRENT LIB" (id=1). 
-                    // So I will UPDATE id=1 to match the "Manage Lib" feature.
+            if ($file->move($destinationDir, $newName)) {
+                $sizeBytes = $file->getSize();
+                $realsize = format_bytes($sizeBytes);
+                $path = 'uploads/libs/' . $newName;
+                $payload = $this->request->getPost('payload');
 
-                    $sizeBytes = $file->getSize();
-                    $base = log($sizeBytes, 1024);
-                    $suffixes = array('B', 'KB', 'MB', 'GB', 'TB');
-                    $realsize = round(pow(1024, $base - floor($base)), 2) . ' ' . $suffixes[floor($base)];
-                    $lt = time(); // current timestamp
-                    $path = 'TumharaPapaDARK/' . $filename;
-
-                    $data = [
-                        'name' => $filename, // Views/Admin/lib.php uses 'name' column? "echo $userDetails21['name'];"
-                        'file' => $filename, // public/lib.php used 'file'.
-                        'file_type' => $path, // public/lib.php used 'file_type' as path?
-                        'path' => $path,      // Views/Admin/lib.php uses 'path'.
-                        'size' => $realsize,  // Views/Admin/lib.php uses 'size'.
-                        'file_size' => $realsize, // public/lib.php used 'file_size'.
-                        'time' => $lt,        // public/lib.php used 'time'.
-                        'last_modified' => $lt // Views/Admin/lib.php uses 'last_modified'.
-                    ];
-
-                    // Updating id=1 to ensure the "Current Lib" is updated. 
-                    // Inserting might fill DB but not show in Admin panel if it only selects id=1.
-
-                    $exists = $db->table('lib')->where('id', 1)->countAllResults();
-                    if ($exists) {
-                        $db->table('lib')->where('id', 1)->update($data);
-                    } else {
-                        $data['id'] = 1;
-                        $db->table('lib')->insert($data);
+                if (empty($payload)) {
+                    if ($isAjax) {
+                        return $this->ajaxError('Payload Encryption Key is required!');
                     }
-
-                    return redirect()->back()->with('msgSuccess', 'LIB uploaded successfully: ' . $realsize);
-                } else {
-                    return redirect()->back()->with('msgDanger', 'Failed to move uploaded file.');
+                    return redirect()->back()->with('msgDanger', 'Payload Encryption Key is required!');
                 }
+
+                // New upload becomes active by default.
+                $db->table('lib')->set('is_active', 0)->update();
+
+                $data = [
+                    'file' => $filename,
+                    'file_type' => $path,
+                    'file_size' => $realsize,
+                    'payload' => $payload,
+                    'is_active' => 1,
+                    'time' => date('Y-m-d H:i:s')
+                ];
+
+                $db->table('lib')->insert($data);
+
+                if ($isAjax) {
+                    return $this->ajaxOk('LIB uploaded successfully: ' . $realsize, [
+                        'file' => $filename,
+                        'fileSize' => $realsize,
+                    ]);
+                }
+
+                return redirect()->back()->with('msgSuccess', 'LIB uploaded successfully: ' . $realsize);
             } else {
-                return redirect()->back()->with('msgDanger', 'Invalid file or upload failed.');
+                if ($isAjax) {
+                    return $this->ajaxError('Failed to move uploaded file.');
+                }
+                return redirect()->back()->with('msgDanger', 'Failed to move uploaded file.');
             }
         }
 
-        // Fetch Current Lib Data (id=1)
-        $libData = $db->table('lib')->where('id', 1)->get()->getRowArray();
-
-        // Format last modified like legacy lib.php:
-        // $timestamp = $userDetails21['last_modified'];
-        // $date = new DateTime(); $date->setTimestamp($timestamp); ... $last = $date->format(...)
-        // Or just pass the raw data and let View handle it (or handle here).
-        // Legacy view used $last variable.
-        if ($libData) {
-            $timestamp = $libData['last_modified'];
-            // Wait, existing data in DB might be formatted string if legacy code was messy. 
-            // In public/lib.php it inserted filemtime() which is int timestamp.
-            // But table schema might be VARCHAR? 
-            // Assuming int.
-            $date = new \DateTime();
-            $date->setTimestamp((int) $timestamp);
-            $libData['formatted_date'] = $date->format('Y-m-d h:i:s a');
-
-            // Legacy view also used $current (current time). I can pass it or use date().
+        // Fetch active lib first, fallback to latest.
+        $libHistory = $db->table('lib')->orderBy('id', 'DESC')->get()->getResultArray();
+        $libData = $db->table('lib')->where('is_active', 1)->orderBy('id', 'DESC')->get()->getRowArray();
+        if (!$libData && !empty($libHistory)) {
+            $libData = $libHistory[0];
         }
 
         $data = [
-            'title' => 'lib',
+            'title' => 'Library Management',
             'user' => $user,
             'time' => $this->time,
-            'validation' => $validation,
-            'libData' => $libData
+            'libData' => $libData,
+            'libHistory' => $libHistory
         ];
         return view('Admin/lib', $data);
+    }
+
+    public function downloadLib($id)
+    {
+        $db = \Config\Database::connect();
+        $lib = $db->table('lib')->where('id', (int) $id)->get()->getRowArray();
+
+        if (!$lib) {
+            return redirect()->to('login')->with('msgDanger', 'Library not found.');
+        }
+
+        $relativePath = ltrim((string) ($lib['file_type'] ?? ''), '/');
+        $fullPath = FCPATH . $relativePath;
+
+        if ($relativePath === '' || !is_file($fullPath)) {
+            return redirect()->to('login')->with('msgDanger', 'Library file is missing.');
+        }
+
+        $downloadName = !empty($lib['file']) ? $lib['file'] : basename($fullPath);
+        return $this->response->download($fullPath, null)->setFileName($downloadName);
+    }
+
+    public function deleteLib($id)
+    {
+        $user = $this->user;
+        if ($user->level != 1 && $user->level != 2) {
+            return redirect()->to('dashboard')->with('msgWarning', 'Only Owner/Admin can delete libraries!');
+        }
+
+        $db = \Config\Database::connect();
+        $lib = $db->table('lib')->where('id', (int) $id)->get()->getRowArray();
+
+        if (!$lib) {
+            return redirect()->back()->with('msgDanger', 'Library not found.');
+        }
+
+        $wasActive = !empty($lib['is_active']);
+
+        // Delete the physical file
+        $relativePath = ltrim((string) ($lib['file_type'] ?? ''), '/');
+        $fullPath = FCPATH . $relativePath;
+        if ($relativePath !== '' && is_file($fullPath)) {
+            unlink($fullPath);
+        }
+
+        // Delete from DB
+        $db->table('lib')->where('id', (int) $id)->delete();
+
+        // If the active library was deleted, promote the latest remaining library.
+        if ($wasActive) {
+            $nextLib = $db->table('lib')->select('id')->orderBy('id', 'DESC')->limit(1)->get()->getRowArray();
+            if ($nextLib) {
+                $db->table('lib')->set('is_active', 0)->update();
+                $db->table('lib')->where('id', (int) $nextLib['id'])->update(['is_active' => 1]);
+            }
+        }
+
+        return redirect()->back()->with('msgSuccess', 'Library deleted successfully.');
     }
 
     public function Server()
@@ -555,7 +641,11 @@ class User extends BaseController
                 return $this->passwd_act();
         }
         if (($user->level == 1) || ($user->level == 2)) {
-            if ($this->request->getPost('_ftext'))
+            if ($this->request->getPost('safemode_form'))
+                return $this->safemode_act();
+            if ($this->request->getPost('floating_form'))
+                return $this->floating_act();
+            if ($this->request->getPost('_ftext_form') || $this->request->getPost('_ftext'))
                 return $this->_ftext_act();
 
             if ($this->request->getPost('fullname_form'))
@@ -614,7 +704,11 @@ class User extends BaseController
 
         if ($user->level == 1) {
 
-            if ($this->request->getPost('_ftext'))
+            if ($this->request->getPost('safemode_form'))
+                return $this->safemode_act();
+            if ($this->request->getPost('floating_form'))
+                return $this->floating_act();
+            if ($this->request->getPost('_ftext_form') || $this->request->getPost('_ftext'))
                 return $this->_ftext_act();
         }
 
@@ -701,17 +795,60 @@ class User extends BaseController
     {
         $id = 1;
         $model = new _ftext();
-        $myinput = $this->request->getPost('_ftext');
-        $status = $this->request->getPost('_ftextr');
-        $wow = '';
-        if ($status == "Safe") {
-            $wow .= "Safe";
-        } else {
-            $wow .= "Anti-Cheat is High..!!";
+        $featureModel = new Feature();
+        $myinput = $this->request->getPost('_ftext_value');
+        if ($myinput === null) {
+            $myinput = $this->request->getPost('_ftext');
         }
-        $data = ['_ftext' => $myinput, '_status' => $wow];
-        $model->update($id, $data);
-        return redirect()->back()->with('msgSuccess', 'Successfuly Changed Mod Floating And Status.');
+        $current = $model->find($id);
+
+        if ($myinput === null || $myinput === '') {
+            $myinput = $current['_ftext'] ?? '';
+        }
+
+        // Update credit text only. Do not touch safe status here.
+        $model->update($id, ['_ftext' => $myinput]);
+
+        $fresh = $model->find($id);
+        $safeStatus = $fresh['_status'] ?? 'Anti-Cheat is High..!!';
+        $isSafeMode = ($safeStatus === 'Safe');
+        $featureRow = $featureModel->find($id);
+        $isFloatingEnabled = (($featureRow['Floating'] ?? 'off') === 'on');
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Floating text updated.', [
+                'safeMode' => $isSafeMode,
+                'floatingEnabled' => $isFloatingEnabled,
+            ]);
+        }
+        return redirect()->back()
+            ->with('msgSuccess', 'Successfuly Changed Mod Floating And Status.')
+            ->with('reopen_mod_hub', '1');
+    }
+
+    private function safemode_act()
+    {
+        $id = 1;
+        $model = new _ftext();
+        $featureModel = new Feature();
+        $safe = $this->request->getPost('safe_mode');
+        $nextStatus = ($safe === 'on') ? 'Safe' : 'Anti-Cheat is High..!!';
+
+        // Update safe status only. Do not touch credit text here.
+        $model->update($id, ['_status' => $nextStatus]);
+
+        $featureRow = $featureModel->find($id);
+        $isFloatingEnabled = (($featureRow['Floating'] ?? 'off') === 'on');
+
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Safe Mode status updated.', [
+                'safeMode' => ($nextStatus === 'Safe'),
+                'floatingEnabled' => $isFloatingEnabled,
+            ]);
+        }
+
+        return redirect()->back()
+            ->with('msgSuccess', 'Safe Mode status updated.')
+            ->with('reopen_mod_hub', '1');
     }
 
     private function status_act()
@@ -719,18 +856,27 @@ class User extends BaseController
         $id = 1;
         $model = new onoff();
         $myinput = $this->request->getPost('myInput');
-        $wow = '';
-        if (isset($_POST['radios']) && $_POST['radios'] == 'on') {
-            $wow .= "on";
-        } else {
-            $wow .= "off";
+        $status = $this->request->getPost('radios');
+        $current = $model->find($id);
+
+        if ($myinput === null || $myinput === '') {
+            $myinput = $current['myinput'] ?? '';
         }
+        
         $data = [
-            'status' => $wow,
+            'status' => ($status === 'on') ? 'on' : 'off',
             'myinput' => $myinput
         ];
+        
         $model->update($id, $data);
-        return redirect()->back()->with('msgSuccess', 'Mod Status Successfuly Changed.');
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Maintenance status updated.', [
+                'maintenance' => ($status === 'on') ? 'on' : 'off',
+            ]);
+        }
+        return redirect()->back()
+            ->with('msgSuccess', 'Mod Status Successfully Changed.')
+            ->with('reopen_mod_hub', '1');
     }
 
     private function modname_act()
@@ -738,14 +884,65 @@ class User extends BaseController
         $id = 1;
         $model = new Server();
         $new_modname = $this->request->getPost('modname');
+        $current = $model->find($id);
+        if ($new_modname === null || $new_modname === '') {
+            $new_modname = $current['modname'] ?? '';
+        }
         $data = ['modname' => $new_modname];
         $model->update($id, $data);
-        return redirect()->back()->with('msgSuccess', 'Mod Name Successfuly Changed.');
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Mod name updated.');
+        }
+        return redirect()->back()
+            ->with('msgSuccess', 'Mod Name Successfuly Changed.')
+            ->with('reopen_mod_hub', '1');
+    }
+
+    private function floating_act()
+    {
+        $id = 1;
+        $model = new Feature();
+        $status = $this->request->getPost('Floating');
+        $current = $model->find($id);
+
+        $data = [
+            'ESP' => $current['ESP'] ?? 'off',
+            'Item' => $current['Item'] ?? 'off',
+            'SilentAim' => $current['SilentAim'] ?? 'off',
+            'AIM' => $current['AIM'] ?? 'off',
+            'BulletTrack' => $current['BulletTrack'] ?? 'off',
+            'Memory' => $current['Memory'] ?? 'off',
+            'Floating' => ($status === 'on') ? 'on' : 'off',
+            'Setting' => $current['Setting'] ?? 'off',
+        ];
+
+        $model->update($id, $data);
+
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Floating Text setting updated.', [
+                'floatingEnabled' => ($status === 'on'),
+            ]);
+        }
+
+        return redirect()->back()
+            ->with('msgSuccess', 'Floating Text setting updated.')
+            ->with('reopen_mod_hub', '1');
     }
 
     private function feature_act()
     {
         $id = 1;
+        $ftextModel = new _ftext();
+        $ftext = $ftextModel->find($id);
+        if (($ftext['_status'] ?? '') !== 'Safe') {
+            if ($this->request->isAJAX()) {
+                return $this->ajaxError('Enable Safe Mode before editing Mod Features.', [
+                    'safeMode' => false,
+                ]);
+            }
+            return redirect()->back()->with('msgWarning', 'Enable Safe Mode before editing Mod Features.');
+        }
+
         $model = new Feature();
         //=================================================//
         if (isset($_POST['ESP']) && $_POST['ESP'] == 'on') {
@@ -807,7 +1004,35 @@ class User extends BaseController
             'Setting' => $new_Settingvalue
         ];
         $model->update($id, $data);
-        return redirect()->back()->with('msgSuccess', 'Mod Feature Stats Changed.');
+        if ($this->request->isAJAX()) {
+            return $this->ajaxOk('Feature state updated.', [
+                'floatingEnabled' => ($new_Floatingvalue === 'on'),
+                'safeMode' => true,
+            ]);
+        }
+        return redirect()->back()
+            ->with('msgSuccess', 'Mod Feature Stats Changed.')
+            ->with('reopen_mod_hub', '1');
+    }
+
+    private function ajaxOk(string $message, array $extra = [])
+    {
+        return $this->response->setJSON(array_merge([
+            'status' => 'ok',
+            'message' => $message,
+            'csrfName' => csrf_token(),
+            'csrfHash' => csrf_hash(),
+        ], $extra));
+    }
+
+    private function ajaxError(string $message, array $extra = [])
+    {
+        return $this->response->setJSON(array_merge([
+            'status' => 'error',
+            'message' => $message,
+            'csrfName' => csrf_token(),
+            'csrfHash' => csrf_hash(),
+        ], $extra));
     }
 
     private function passwd_act()
@@ -846,8 +1071,7 @@ class User extends BaseController
         if (!$this->validate($form_rules)) {
             return redirect()->back()->withInput()->with('msgDanger', 'Something wrong! Please check the form');
         } elseif ($this->validate($form_rules)) {
-            $newPassword = create_password($password);
-            if (isset($newPassword)) {
+            if (!empty($password)) {
                 // Removed include conn.php
                 $db = \Config\Database::connect();
                 $CompName = "PROBOT FREE OFFICIAL";
@@ -874,7 +1098,12 @@ class User extends BaseController
                         'exp_date' => $expDate
                     ]);
 
-                    $link = "<a class='btn btn-copy' href='https://" . $server . "/verify_pass?key=" . $newPassword . "&mail=" . $emailId . "&token=" . $token . "' style='text-align:center;width: 60px;font-size:16px'>Change Password</a>";
+                    $encodedPassword = rtrim(strtr(base64_encode($password), '+/', '-_'), '=');
+                    $verifyUrl = site_url('verify_pass')
+                        . '?key=' . urlencode($encodedPassword)
+                        . '&mail=' . urlencode($emailId)
+                        . '&token=' . urlencode($token);
+                    $link = "<a class='btn btn-copy' href='" . $verifyUrl . "' style='text-align:center;width: 60px;font-size:16px'>Change Password</a>";
                     $email = \Config\Services::email();
                     $email->setFrom('noreply@probotfree.store', ' 𝗣𝗥𝗢𝗕𝗢𝗧 𝗙𝗥𝗘𝗘 𝗢𝗙𝗙𝗜𝗖𝗜𝗔𝗟');
                     $email->setTo($emailId);

@@ -1,209 +1,214 @@
 <?= $this->extend('Layout/Starter') ?>
 <?= $this->section('content') ?>
+
 <div class="row">
     <div class="col-lg-12">
         <?= $this->include('Layout/msgStatus') ?>
     </div>
+
+    <div class="col-lg-12 mb-3">
+        <div class="card shadow border-left-primary">
+            <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                    <div class="h5 mb-1 text-dark">Mod Controller</div>
+                    <div class="small text-muted">Open each setting in a floating window.</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modStatusModal">
+                        Server Status
+                    </button>
+                    <?php if ((int) $user->level === 1): ?>
+                        <button type="button" class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#modFeaturesModal">
+                            Features
+                        </button>
+                    <?php endif; ?>
+                    <button type="button" class="btn btn-outline-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#modNameModal">
+                        Mod Name
+                    </button>
+                    <button type="button" class="btn btn-outline-success rounded-pill" data-bs-toggle="modal" data-bs-target="#modFloatingTextModal">
+                        Floating Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<!----><!----><!----><!----><!----><!----><!----><!----><!----><!---->
-<?php if ($user->level != 2): ?>
-    <div class="col-lg-6">
-        <div class="card card bg-gradient-light shadow h-100 py-2 mb-3">
-            <div class="card-body h5 p-3 text-dark">
-                𝑺𝒆𝒓𝒗𝒆𝒓 𝑩𝒂𝒔𝒆𝒅 𝑴𝒐𝒅</div>
-            <div class="card-body">
+
+<div class="modal fade" id="modStatusModal" tabindex="-1" role="dialog" aria-labelledby="modStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modStatusModalLabel">Server Based Mod</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
                 <?= form_open() ?>
                 <input type="hidden" name="status_form" value="1">
+
                 <div class="form-group mb-3">
-                    <label for="status">Current Maintenance Mode : <font size="2" color="#a39c9b">
-                            <?php echo $onoff['status']; ?>
-                        </font></label>
-                    <div class="input-group mb-3">
-                        <label id="esp" class="hacks">
-                            𝐌𝐚𝐢𝐧𝐭𝐞𝐧𝐚𝐧𝐜𝐞 𝐌𝐨𝐝𝐞
-                            <div class="switch">
-                                <input type="checkbox" name="radios" id="radio" value="on" <?php if ($onoff['status'] == "on") { ?> checked="checked" <?php } ?>>
-                                <span class="slider round" />
-                            </div>
-                        </label>
-                    </div>
-                    <label for="modname">𝑶𝒇𝒇𝒍𝒊𝒏𝒆 𝑴𝒔𝒈 : <font size="2" color="#a39c9b">
-                            <?php echo $onoff['myinput']; ?>
-                        </font></label>
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text" id="inputGroup-sizing-default">Offline Msg</span>
+                    <label class="d-block">Current Maintenance Mode: <span class="text-muted"><?= esc($onoff['status'] ?? '-') ?></span></label>
+                    <label class="hacks d-block">
+                        Maintenance Mode
+                        <div class="switch">
+                            <input type="checkbox" name="radios" value="on" <?php if (($onoff['status'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
                         </div>
-                        <textarea class="form-control" placeholder="𝑆𝑒𝑟𝑣𝑒𝑟 𝑖𝑠 𝑈𝑛𝑑𝑒𝑟 𝑀𝑎𝑖𝑛𝑡𝑎𝑖𝑛𝑎𝑛𝑐𝑒"
-                            name="myInput" id="myInput" id="exampleFormControlTextarea1" rows="1"></textarea>
-                    </div>
-                    <?php if ($validation->hasError('modname')): ?>
-                        <small id="help-modname" class="text-danger"><?= $validation->getError('modname') ?></small>
-                    <?php endif; ?>
+                    </label>
                 </div>
-                <div class="form-group my-2">
-                    <button type="submit" class="btn btn-outline-primary rounded-pill">𝑼𝒑𝒅𝒂𝒕𝒆</button>
+
+                <div class="form-group mb-3">
+                    <label for="myInput">Offline Message</label>
+                    <textarea class="form-control" name="myInput" id="myInput" rows="2" placeholder="Server is under maintenance"><?= esc($onoff['myinput'] ?? '') ?></textarea>
+                </div>
+
+                <div class="text-right">
+                    <button type="submit" class="btn btn-outline-primary rounded-pill">Update</button>
                 </div>
                 <?= form_close() ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if ((int) $user->level === 1): ?>
+    <div class="modal fade" id="modFeaturesModal" tabindex="-1" role="dialog" aria-labelledby="modFeaturesModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modFeaturesModalLabel">Mod Features</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <?= form_open() ?>
+                    <input type="hidden" name="feature_form" value="1">
+
+                    <label class="hacks d-block">ESP
+                        <div class="switch">
+                            <input type="checkbox" name="ESP" value="on" <?php if (($feature['ESP'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Items
+                        <div class="switch">
+                            <input type="checkbox" name="Item" value="on" <?php if (($feature['Item'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Aim-Bot
+                        <div class="switch">
+                            <input type="checkbox" name="AIM" value="on" <?php if (($feature['AIM'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Silent Aim
+                        <div class="switch">
+                            <input type="checkbox" name="SilentAim" value="on" <?php if (($feature['SilentAim'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Bullet Track
+                        <div class="switch">
+                            <input type="checkbox" name="BulletTrack" value="on" <?php if (($feature['BulletTrack'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Memory
+                        <div class="switch">
+                            <input type="checkbox" name="Memory" value="on" <?php if (($feature['Memory'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Floating Texts
+                        <div class="switch">
+                            <input type="checkbox" name="Floating" value="on" <?php if (($feature['Floating'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+                    <label class="hacks d-block">Settings
+                        <div class="switch">
+                            <input type="checkbox" name="Setting" value="on" <?php if (($feature['Setting'] ?? '') === 'on'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
+                        </div>
+                    </label>
+
+                    <div class="text-right mt-3">
+                        <button type="submit" class="btn btn-outline-danger rounded-pill">Update</button>
+                    </div>
+                    <?= form_close() ?>
+                </div>
             </div>
         </div>
     </div>
 <?php endif; ?>
-<!----><!----><!----><!----><!----><!----><!----><!---->
-<div class="col-lg-6">
-    <div class="card card bg-gradient-light shadow h-100 py-2 mb-3">
-        <div class="card-body h5 p-3 text-dark">
-            𝐌𝐨𝐝 𝐅𝐞𝐚𝐭𝐮𝐫𝐞
-        </div>
-        <div class="card-body">
-            <?= form_open() ?>
 
-            <input type="hidden" name="feature_form" value="1">
-            <div class="form-group mb-3">
-                <label for="status">Current Status : ESP - <font color="#a39c9b"><?php echo $feature['ESP']; ?>
-                    </font> Items - <font color="#a39c9b"><?php echo $feature['Item']; ?></font> AIM - <font
-                        color="#a39c9b"><?php echo $feature['AIM']; ?></font> SilentAim - <font color="#a39c9b">
-                        <?php echo $feature['SilentAim']; ?></font> BulletTrack - <font color="#a39c9b">
-                        <?php echo $feature['BulletTrack']; ?></font> Memory - <font color="#a39c9b">
-                        <?php echo $feature['Memory']; ?></font> Floating Texts - <font color="#a39c9b">
-                        <?php echo $feature['Floating']; ?></font> Setting - <font color="#a39c9b">
-                        <?php echo $feature['Setting']; ?></font></label>
-                <label id="ESP" class="hacks">
-                    𝐄𝐒𝐏
-                    <div class="switch">
-                        <input type="checkbox" name="ESP" id="ESP" value="on" <?php if ($feature['ESP'] == "on") { ?>
-                                checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="Item" class="hacks">
-                    Items
-                    <div class="switch">
-                        <input type="checkbox" name="Item" id="Item" value="on" <?php if ($feature['Item'] == "on") { ?>
-                                checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="AIM" class="hacks">
-                    𝐀𝐢𝐦-𝐁𝐨𝐭
-                    <div class="switch">
-                        <input type="checkbox" name="AIM" id="AIM" value="on" <?php if ($feature['AIM'] == "on") { ?>
-                                checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="SilentAim" class="hacks">
-                    Silent Aim
-                    <div class="switch">
-                        <input type="checkbox" name="SilentAim" id="SilentAim" value="on" <?php if ($feature['SilentAim'] == "on") { ?> checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="BulletTrack" class="hacks">
-                    𝐁𝐮𝐥𝐥𝐞𝐭 𝐓𝐫𝐚𝐜𝐤
-                    <div class="switch">
-                        <input type="checkbox" name="BulletTrack" id="BulletTrack" value="on" <?php if ($feature['BulletTrack'] == "on") { ?> checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="Memory" class="hacks">
-                    Memory
-                    <div class="switch">
-                        <input type="checkbox" name="Memory" id="Memory" value="on" <?php if ($feature['Memory'] == "on") { ?> checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="Floating" class="hacks">
-                    Floating Texts
-                    <div class="switch">
-                        <input type="checkbox" name="Floating" id="Floating" value="on" <?php if ($feature['Floating'] == "on") { ?> checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <label id="Setting" class="hacks">
-                    Settings
-                    <div class="switch">
-                        <input type="checkbox" name="Setting" id="Setting" value="on" <?php if ($feature['Setting'] == "on") { ?> checked="checked" <?php } ?>>
-                        <span class="slider round" />
-                    </div>
-                </label>
-                <div class="form-group my-2">
-                    <button type="submit" class="btn btn-outline-danger rounded-pill">
-                        𝑼𝒑𝒅𝒂𝒕𝒆
-                    </button>
-                </div>
-                <?= form_close() ?>
+<div class="modal fade" id="modNameModal" tabindex="-1" role="dialog" aria-labelledby="modNameModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modNameModalLabel">Change Mod Name</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-    </div>
-    <!----><!----><!----><!----><!----><!----><!----><!----><!----><!---->
-    <div class="col-lg-12">
-        <div class="card card bg-gradient-light shadow h-100 py-2 mb-3">
-            <div class="card-body h5 p-3 text-dark">
-                𝑪𝒉𝒂𝒏𝒈𝒆 𝑴𝒐𝒅 𝑵𝒂𝒎𝒆</div>
-            <div class="card-body">
+            <div class="modal-body">
                 <?= form_open() ?>
                 <input type="hidden" name="modname_form" value="1">
                 <div class="form-group mb-3">
-                    <label for="modname">Current Mod Name: <font size="2" color="#a39c9b"><?php echo $row['modname']; ?>
-                        </font></label>
-                    <input type="text" name="modname" id="modname" class="form-control mt-2"
-                        placeholder="𝐸𝑛𝑡𝑒𝑟 𝑌𝑜𝑢𝑟 𝑁𝑒𝑤 𝑀𝑜𝑑 𝑁𝑎𝑚𝑒" aria-describedby="help-modname"
-                        REQUIRED>
+                    <label for="modname">Current Mod Name: <span class="text-muted"><?= esc($row['modname'] ?? '-') ?></span></label>
+                    <input type="text" name="modname" id="modname" class="form-control mt-2" placeholder="Enter your new mod name" required>
                     <?php if ($validation->hasError('modname')): ?>
-                        <small id="help-modname" class="text-danger"><?= $validation->getError('modname') ?></small>
+                        <small class="text-danger"><?= $validation->getError('modname') ?></small>
                     <?php endif; ?>
                 </div>
-                <div class="form-group my-2">
-                    <button type="submit" class="btn btn-outline-warning rounded-pill">𝑼𝒑𝒅𝒂𝒕𝒆</button>
+                <div class="text-right">
+                    <button type="submit" class="btn btn-outline-warning rounded-pill">Update</button>
                 </div>
                 <?= form_close() ?>
             </div>
         </div>
     </div>
-    <!----><!----><!----><!----><!----><!----><!----><!----><!----><!---->
-    <div class="col-lg-12">
-        <div class="card card bg-gradient-light shadow h-100 py-2 mb-3">
-            <div class="card-body h5 p-3 text-dark">
-                𝑪𝒉𝒂𝒏𝒈𝒆 𝑭𝒍𝒐𝒂𝒕𝒊𝒏𝒈 𝑻𝒆𝒙𝒕</div>
-            <div class="card-body">
-                <?= form_open() ?>
-                <input type="hidden" name="_ftext" value="1">
+</div>
 
-                <label for="status">
-                    Current Mod Status:
-                    <font size="2" color="#a39c9b">
-                        <?php echo $ftext['_status']; ?>
-                    </font>
-                </label>
-                <div class="input-group mb-3">
-                    <label id="esp" class="hacks">
-                        𝐒𝐚𝐟𝐞 𝐌𝐨𝐝𝐞
+<div class="modal fade" id="modFloatingTextModal" tabindex="-1" role="dialog" aria-labelledby="modFloatingTextModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modFloatingTextModalLabel">Change Floating Text</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label class="d-block">Current Mod Status: <span class="text-muted"><?= esc($ftext['_status'] ?? '-') ?></span></label>
+                </div>
+
+                <?= form_open() ?>
+                <input type="hidden" name="safemode_form" value="1">
+                <div class="form-group mb-3">
+                    <label class="hacks d-block">
+                        Safe Mode
                         <div class="switch">
-                            <input type="checkbox" name="_ftextr" id="_ftextr" value="Safe" <?php if ($ftext['_status'] == "Safe") { ?> checked="checked" <?php } ?>>
-                            <span class="slider round" />
+                            <input type="checkbox" name="safe_mode" value="on" onchange="this.form.submit()" <?php if (($ftext['_status'] ?? '') === 'Safe'): ?>checked="checked"<?php endif; ?>>
+                            <span class="slider round"></span>
                         </div>
                     </label>
                 </div>
+                <?= form_close() ?>
+
+                <?= form_open() ?>
+                <input type="hidden" name="_ftext_form" value="1">
                 <div class="form-group mb-3">
-                    <label for="_ftext">Current Floating Text: <font size="2" color="#a39c9b">
-                            <?php echo $ftext['_ftext']; ?>
-                        </font></label>
-                    <input type="text" name="_ftext" id="_ftext" class="form-control mt-2"
-                        placeholder="𝐺𝑖𝑣𝑒 𝐹𝑒𝑒𝑑𝑏𝑎𝑐𝑘 𝐸𝑙𝑠𝑒 𝐾𝑒𝑦 𝑅𝑒𝑚𝑜𝑣𝑒𝑑!"
-                        aria-describedby="help-_ftext" REQUIRED>
+                    <label for="_ftext">Current Floating Text: <span class="text-muted"><?= esc($ftext['_ftext'] ?? '-') ?></span></label>
+                    <input type="text" name="_ftext" id="_ftext" class="form-control mt-2" placeholder="Give feedback else key removed" required>
                     <?php if ($validation->hasError('_ftext')): ?>
-                        <small id="help-_ftext" class="text-danger"><?= $validation->getError('_ftext') ?></small>
+                        <small class="text-danger"><?= $validation->getError('_ftext') ?></small>
                     <?php endif; ?>
                 </div>
-                <div class="form-group my-2">
-                    <button type="submit" class="btn btn-outline-success rounded-pill">𝑼𝒑𝒅𝒂𝒕𝒆</button>
+
+                <div class="text-right">
+                    <button type="submit" class="btn btn-outline-success rounded-pill">Update</button>
                 </div>
                 <?= form_close() ?>
             </div>
         </div>
     </div>
-    <!----><!----><!----><!----><!----><!----><!----><!----><!----><!---->
-    </br>
 </div>
+
 <?= $this->endSection() ?>

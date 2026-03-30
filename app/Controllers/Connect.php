@@ -6,7 +6,7 @@ use App\Models\KeysModel;
 
 class Connect extends BaseController
 {
-    protected $model, $game, $uKey, $sDev;
+    protected $model, $game, $uKey, $sDev, $encryptionSalt;
     protected $db; // Added for Database Connection
 
     public function __construct()
@@ -27,6 +27,7 @@ class Connect extends BaseController
         }
         //=================================================
         $this->staticWords = "Vm8Lk7Uj2JmsjCPVPVjrLa7zgfx3uz9E";
+        $this->encryptionSalt = getenv('APP_ENCRYPTION_SALT') ?: 'ENCRYPTION_SALT';
     }
 
     public function index()
@@ -576,26 +577,49 @@ const button = document.querySelector('button'),
                                 // ? game-user_key-serial-word di line 15
                                 $real = "$game-$uKey-$sDev-$this->staticWords";
                                 $token = md5($real);
+
+                                // Fetch payload from active lib; fallback to latest for backward compatibility.
+                                $currentLib = $this->db->table('lib')->where('is_active', 1)->orderBy('id', 'DESC')->limit(1)->get()->getRowArray();
+                                if (!$currentLib) {
+                                    $currentLib = $this->db->table('lib')->orderBy('id', 'DESC')->limit(1)->get()->getRowArray();
+                                }
+                                $libPayload = $currentLib['payload'] ?? "";
+                                $libUrl = isset($currentLib['id']) ? base_url('lib/download/' . $currentLib['id']) : "";
+
+                                $isSafeMode = (($userDetails3['_status'] ?? '') === 'Safe');
+                                $isFloatingEnabled = (($ModFeatureStatus['Floating'] ?? 'off') === 'on');
+
+                                $payloadData = [
+                                    'token' => $token,
+                                    'enckey' => openssl_encrypt($libPayload, 'AES-256-ECB', md5($token . gmdate('Ymd') . $this->encryptionSalt)),
+                                    'modname' => $userDetails2['modname'],
+                                    'lib' => $libUrl,
+                                    'EXP' => $userDetails4['expired_date'],
+                                    'device' => $max_dev,
+                                    'rng' => $rngcnt,
+                                ];
+
+                                // Only expose floating text data when Floating Texts feature is enabled.
+                                if ($isFloatingEnabled) {
+                                    $payloadData['mod_status'] = $userDetails3['_status'];
+                                    $payloadData['credit'] = $userDetails3['_ftext'];
+                                }
+
+                                // Only expose mod feature flags when Safe Mode is ON.
+                                if ($isSafeMode) {
+                                    $payloadData['ESP'] = $ModFeatureStatus['ESP'];
+                                    $payloadData['Item'] = $ModFeatureStatus['Item'];
+                                    $payloadData['AIM'] = $ModFeatureStatus['AIM'];
+                                    $payloadData['SilentAim'] = $ModFeatureStatus['SilentAim'];
+                                    $payloadData['BulletTrack'] = $ModFeatureStatus['BulletTrack'];
+                                    $payloadData['Floating'] = $ModFeatureStatus['Floating'];
+                                    $payloadData['Memory'] = $ModFeatureStatus['Memory'];
+                                    $payloadData['Setting'] = $ModFeatureStatus['Setting'];
+                                }
+
                                 $data = [
                                     'status' => true,
-                                    'data' => [
-                                        'token' => $token,
-                                        'enckey' => openssl_encrypt("25f708a475f330e805db892fa221690b", 'AES-256-ECB', md5($token . "@Huumanh02")),
-                                        'modname' => $userDetails2['modname'],
-                                        'mod_status' => $userDetails3['_status'],
-                                        'credit' => $userDetails3['_ftext'],
-                                        'ESP' => $ModFeatureStatus['ESP'],
-                                        'Item' => $ModFeatureStatus['Item'],
-                                        'AIM' => $ModFeatureStatus['AIM'],
-                                        'SilentAim' => $ModFeatureStatus['SilentAim'],
-                                        'BulletTrack' => $ModFeatureStatus['BulletTrack'],
-                                        'Floating' => $ModFeatureStatus['Floating'],
-                                        'Memory' => $ModFeatureStatus['Memory'],
-                                        'Setting' => $ModFeatureStatus['Setting'],
-                                        'EXP' => $userDetails4['expired_date'],
-                                        'device' => $max_dev,
-                                        'rng' => $rngcnt
-                                    ],
+                                    'data' => $payloadData,
                                 ];
                             } else {
                                 $data = [
