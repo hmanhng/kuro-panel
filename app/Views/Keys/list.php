@@ -7,7 +7,7 @@
             <?= $this->include('Layout/msgStatus') ?>
         </div>
         <div class="col-lg-12">
-            <div class="card shadow-lg p-0 mb-5 ">
+            <div class="card shadow-lg p-0 mb-5">
                 <div class="card-body text-dark h5">
                     <div class="row">
                         <div class="col pt-1">
@@ -15,19 +15,11 @@
                         </div>
                         <div class="col text-end">
 
-                            <a class="btn btn-outline-danger btn-sm" onclick='return deleteAllKey()'
-                                href="<?= site_url('keys/deleteKeys') ?>" input type='submit' value='deleteAllKey'><i
-                                    class="bi bi-trash-fill"></i>Delete All Keys</a>
+                            <a class="btn btn-outline-danger btn-sm" onclick='return deleteExpiredKeys()'
+                                href="<?= site_url('keys/alter') ?>" input type='submit' value='deleteExpiredKeys'><i
+                                    class="bi bi-trash-fill"></i> Delete Expired Keys</a>
 
-                            <a class="btn btn-outline-warning btn-sm" onclick='return resetAll()'
-                                href="<?= site_url('keys/resetAll') ?>" input type='submit' value='resetAll'><i
-                                    class="bi bi-bootstrap-reboot"></i> Reset All Keys</a>
-
-                            <a class="btn btn-outline-dark btn-sm" onclick='return unusedDelete()'
-                                href="<?= site_url('keys/start') ?>" input type='submit' value='unusedDelete'><i
-                                    class="bi bi-trash-fill"></i> Un-Used</a>
-
-                            <a class="btn btn-outline-dark btn-sm rounded-pill"
+                            <a class="btn btn-outline-dark btn-sm"
                                 href="<?= site_url('keys/generate') ?>"><i class="bi bi-person-plus"></i> KEY</a>
 
 
@@ -63,6 +55,24 @@
 
 <?= $this->section('css') ?>
 <?= link_tag("https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css") ?>
+<style>
+    #datatable_wrapper .dataTables_paginate {
+        margin-top: .45rem;
+    }
+
+    #datatable_wrapper .dataTables_paginate .pagination {
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 768px) {
+        #datatable_wrapper .row > .col-sm-12 {
+            margin-bottom: .6rem;
+        }
+        #datatable_wrapper .dataTables_paginate .pagination {
+            justify-content: center;
+        }
+    }
+</style>
 
 <?= $this->endSection() ?>
 
@@ -75,6 +85,7 @@
         var table = $('#datatable').DataTable({
             processing: true,
             serverSide: true,
+            pagingType: 'full_numbers',
             order: [
                 [0, "desc"]
             ],
@@ -225,16 +236,8 @@
          });
      }*/
 
-    function deleteAllKey() {
-        return confirm('Are you sure you want to delete all keys?');
-    };
-
-    function resetAll() {
-        return confirm('Are you sure you want to reset all keys?');
-    };
-
-    function unusedDelete() {
-        return confirm('Are you sure you want to delete un-used keys?');
+    function deleteExpiredKeys() {
+        return confirm('Are you sure you want to delete all expired keys?');
     };
 
     function resetUserKey(keys) {

@@ -18,9 +18,9 @@ return "#FF0000";
         <div class="alert alert-dark" role="alert">
             <strong>INFO :</strong> Search specify user by their (username, fullname, saldo or uplink).
         </div>
-        <div class="card shadow-lg p-0 mb-5 ">
+        <div class="card shadow-lg p-0 mb-5">
             <div class="card-body text-dark text-center h6 p-3">
-                <h2>𝐌𝐚𝐧𝐚𝐠𝐞 𝐔𝐬𝐞𝐫𝐬</h2>
+                <h2>Manage Users</h2>
             </div>
             <div class="card-body">
                 <?php if ($user_list) : ?>

@@ -4,17 +4,107 @@
 <?= $this->include('Layout/msgStatus') ?>
 
 <style>
+    #uploadLibModal {
+        background: transparent !important;
+        pointer-events: none;
+    }
+
+    #uploadLibModal .modal-dialog {
+        pointer-events: auto;
+    }
+
+    .retro-deploy-btn {
+        border: 2px solid #1f232b !important;
+        border-radius: 14px !important;
+        background: linear-gradient(135deg, #ffd27b 0%, #f58634 45%, #d86729 100%) !important;
+        color: #24170f !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        box-shadow: 5px 5px 0 #1f232b !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .retro-deploy-btn:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 6px 6px 0 #1f232b !important;
+        filter: saturate(1.08);
+    }
+
+    .retro-deploy-btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 #1f232b !important;
+    }
+
+    .lib-status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 6.2rem;
+        padding: 0.18rem 0.72rem;
+        border: 2px solid #1f232b;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: 2px 2px 0 rgba(31, 35, 43, 0.55);
+    }
+
+    .lib-status-pill--active {
+        background: linear-gradient(135deg, #7de3b2 0%, #2dad79 100%);
+        color: #0f3b29;
+    }
+
+    .lib-status-pill--inactive {
+        background: linear-gradient(135deg, #d5d9e5 0%, #9ca3b8 100%);
+        color: #2f3547;
+    }
+
+    .lib-action-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem 0.6rem;
+        border: 2px solid #1f232b;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none !important;
+        box-shadow: 2px 2px 0 rgba(31, 35, 43, 0.55);
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .lib-action-link:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 rgba(31, 35, 43, 0.55);
+    }
+
+    .lib-action-link--download {
+        background: #dff3ff;
+        color: #1968a3 !important;
+    }
+
+    .lib-action-link--activate {
+        background: #f7e8d1;
+        color: #8a4d08 !important;
+    }
+
+    .lib-action-link--delete {
+        background: #ffe2de;
+        color: #b22b1f !important;
+    }
+
     .drive-upload-toast {
         position: fixed;
-        right: 1.5rem;
-        bottom: 1.5rem;
-        width: min(24rem, calc(100vw - 2rem));
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
-        border-radius: 1rem;
-        box-shadow: 0 1.25rem 3rem rgba(15, 23, 42, 0.18);
-        border: 1px solid rgba(148, 163, 184, 0.22);
+        right: max(1.25rem, env(safe-area-inset-right));
+        bottom: max(1.25rem, env(safe-area-inset-bottom));
+        width: min(22rem, calc(100vw - 2rem));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(247, 250, 254, 0.98) 100%);
+        border-radius: 0.85rem;
+        box-shadow: 0 1rem 2.2rem rgba(15, 23, 42, 0.16);
+        border: 1px solid rgba(148, 163, 184, 0.24);
         overflow: hidden;
-        z-index: 1085;
+        z-index: 9999;
         transform: translateY(130%);
         opacity: 0;
         pointer-events: none;
@@ -29,7 +119,7 @@
     }
 
     .drive-upload-toast__topbar {
-        height: 0.28rem;
+        height: 0.2rem;
         background: rgba(226, 232, 240, 0.95);
     }
 
@@ -42,21 +132,22 @@
 
     .drive-upload-toast__body {
         display: flex;
-        gap: 0.85rem;
+        gap: 0.7rem;
         align-items: flex-start;
-        padding: 1rem 1rem 0.9rem;
+        padding: 0.68rem 0.75rem 0.5rem;
     }
 
     .drive-upload-toast__icon {
-        width: 2.65rem;
-        height: 2.65rem;
-        flex: 0 0 2.65rem;
-        border-radius: 0.9rem;
+        width: 2.1rem;
+        height: 2.1rem;
+        flex: 0 0 2.1rem;
+        border-radius: 0.65rem;
         display: grid;
         place-items: center;
         color: #fff;
         background: linear-gradient(135deg, #1a73e8 0%, #0f5bd3 100%);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        font-size: 0.85rem;
     }
 
     .drive-upload-toast.is-success .drive-upload-toast__icon {
@@ -75,21 +166,24 @@
     .drive-upload-toast__title {
         margin: 0;
         color: #1f2937;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
         font-weight: 700;
-        line-height: 1.35;
+        line-height: 1.25;
     }
 
     .drive-upload-toast__meta,
     .drive-upload-toast__message {
-        margin: 0.2rem 0 0;
+        margin: 0.1rem 0 0;
         color: #64748b;
-        font-size: 0.8rem;
-        line-height: 1.45;
+        font-size: 0.74rem;
+        line-height: 1.3;
     }
 
     .drive-upload-toast__message {
         color: #475569;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .drive-upload-toast__close {
@@ -97,12 +191,13 @@
         border: 0;
         background: transparent;
         color: #94a3b8;
-        width: 2rem;
-        height: 2rem;
+        width: 1.6rem;
+        height: 1.6rem;
         border-radius: 999px;
         display: grid;
         place-items: center;
         transition: background-color 0.2s ease, color 0.2s ease;
+        margin-top: -0.05rem;
     }
 
     .drive-upload-toast__close:hover {
@@ -114,12 +209,12 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0 1rem 0.95rem 4.5rem;
+        padding: 0 0.75rem 0.6rem 3.55rem;
     }
 
     .drive-upload-toast__percent {
         color: #1a73e8;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 0.02em;
     }
@@ -134,14 +229,14 @@
 
     .drive-upload-toast__hint {
         color: #94a3b8;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     @media (max-width: 576px) {
         .drive-upload-toast {
             right: 1rem;
             left: 1rem;
-            bottom: 1rem;
+            bottom: max(1rem, env(safe-area-inset-bottom));
             width: auto;
         }
 
@@ -187,7 +282,7 @@
                         </div>
                     </div>
                     <div class="col-lg-2 col-md-3 col-sm-12 text-end">
-                        <button type="button" class="btn bg-gradient-primary btn-sm mb-0" data-bs-toggle="modal" data-bs-target="#uploadLibModal">
+                        <button type="button" class="btn btn-sm mb-0 retro-deploy-btn" data-bs-toggle="modal" data-bs-target="#uploadLibModal">
                             <i class="ni ni-cloud-upload-96 me-2"></i> Deploy New
                         </button>
                     </div>
@@ -239,9 +334,9 @@
                                     </td>
                                     <td class="align-middle text-center text-sm">
                                         <?php if (!empty($lib['is_active'])): ?>
-                                            <span class="badge badge-sm bg-gradient-success">Active</span>
+                                            <span class="lib-status-pill lib-status-pill--active">Active</span>
                                         <?php else: ?>
-                                            <span class="badge badge-sm bg-gradient-secondary">Inactive</span>
+                                            <span class="lib-status-pill lib-status-pill--inactive">Inactive</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="align-middle text-center">
@@ -249,19 +344,19 @@
                                     </td>
                                     <td class="align-middle text-center text-xs">
                                         <div class="d-flex justify-content-center gap-3">
-                                            <a href="<?= base_url('lib/download/' . $lib['id']) ?>" class="text-info font-weight-bold" target="_blank">Download</a>
+                                            <a href="<?= base_url('lib/download/' . $lib['id']) ?>" class="lib-action-link lib-action-link--download" target="_blank">Download</a>
                                             
                                             <?php if (empty($lib['is_active'])): ?>
                                                 <form action="<?= base_url('admin/lib/active') ?>" method="post" class="d-inline">
                                                     <?= csrf_field() ?>
                                                     <input type="hidden" name="set_active_lib_id" value="<?= (int) $lib['id'] ?>">
-                                                    <button type="submit" class="btn btn-link text-primary font-weight-bold p-0 m-0" style="font-size: 0.75rem;">Activate</button>
+                                                    <button type="submit" class="lib-action-link lib-action-link--activate">Activate</button>
                                                 </form>
                                             <?php endif; ?>
 
                                             <?php if ($user->level == 1 || $user->level == 2): ?>
                                                 <a href="<?= base_url('lib/delete/' . $lib['id']) ?>" 
-                                                    class="text-danger font-weight-bold" 
+                                                    class="lib-action-link lib-action-link--delete" 
                                                     onclick="return confirm('Delete this library permanentely from server?');">
                                                     Delete
                                                 </a>
@@ -307,13 +402,12 @@
 </div>
 
 <!-- Upload Modal -->
-<div class="modal fade" id="uploadLibModal" tabindex="-1" role="dialog" aria-labelledby="uploadLibModalLabel" aria-hidden="true">
+<div class="modal fade" id="uploadLibModal" tabindex="-1" role="dialog" aria-labelledby="uploadLibModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title font-weight-bolder" id="uploadLibModalLabel">Deploy New Library</h5>
                 <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -356,6 +450,20 @@
 
         if (!form || !submitButton || !toast || !progressBar || !percentText) {
             return;
+        }
+
+        if (toast.parentNode !== document.body) {
+            document.body.appendChild(toast);
+        }
+
+        if (modalElement) {
+            modalElement.addEventListener('shown.bs.modal', function () {
+                document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+                    backdrop.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            });
         }
 
         function clearAutoHide() {

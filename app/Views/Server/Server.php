@@ -1,5 +1,18 @@
 <?= $this->extend('Layout/Starter') ?>
 <?= $this->section('content') ?>
+<style>
+@media (max-width: 768px) {
+    .server-toolbar {
+        width: 100%;
+    }
+    .server-toolbar .btn {
+        width: 100%;
+    }
+    .server-toolbar {
+        flex-direction: column;
+    }
+}
+</style>
 
 <div class="row">
     <div class="col-lg-12">
@@ -13,19 +26,19 @@
                     <div class="h5 mb-1 text-dark">Mod Controller</div>
                     <div class="small text-muted">Open each setting in a floating window.</div>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modStatusModal">
+                <div class="d-flex flex-wrap gap-2 server-toolbar">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modStatusModal">
                         Server Status
                     </button>
                     <?php if ((int) $user->level === 1): ?>
-                        <button type="button" class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#modFeaturesModal">
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modFeaturesModal">
                             Features
                         </button>
                     <?php endif; ?>
-                    <button type="button" class="btn btn-outline-warning rounded-pill" data-bs-toggle="modal" data-bs-target="#modNameModal">
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modNameModal">
                         Mod Name
                     </button>
-                    <button type="button" class="btn btn-outline-success rounded-pill" data-bs-toggle="modal" data-bs-target="#modFloatingTextModal">
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modFloatingTextModal">
                         Floating Text
                     </button>
                 </div>
@@ -62,7 +75,7 @@
                 </div>
 
                 <div class="text-right">
-                    <button type="submit" class="btn btn-outline-primary rounded-pill">Update</button>
+                    <button type="submit" class="btn btn-outline-primary">Update</button>
                 </div>
                 <?= form_close() ?>
             </div>
@@ -132,7 +145,7 @@
                     </label>
 
                     <div class="text-right mt-3">
-                        <button type="submit" class="btn btn-outline-danger rounded-pill">Update</button>
+                        <button type="submit" class="btn btn-outline-danger">Update</button>
                     </div>
                     <?= form_close() ?>
                 </div>
@@ -159,7 +172,7 @@
                     <?php endif; ?>
                 </div>
                 <div class="text-right">
-                    <button type="submit" class="btn btn-outline-warning rounded-pill">Update</button>
+                    <button type="submit" class="btn btn-outline-warning">Update</button>
                 </div>
                 <?= form_close() ?>
             </div>
@@ -203,7 +216,7 @@
                 </div>
 
                 <div class="text-right">
-                    <button type="submit" class="btn btn-outline-success rounded-pill">Update</button>
+                    <button type="submit" class="btn btn-outline-success">Update</button>
                 </div>
                 <?= form_close() ?>
             </div>

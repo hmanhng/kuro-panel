@@ -74,13 +74,9 @@ $routes->group('keys', function ($routes) {
 	$routes->post('edit', 'Keys::edit_key');
 	$routes->match(['get', 'post'], 'api', 'Keys::api_get_keys');
 	$routes->get('delete', 'Keys::api_key_delete');
-	$routes->match(['get'], 'resetAll', 'Keys::resetAllKeys');
 	$routes->match(['get'], 'alter', 'Keys::alterKeys');
 	$routes->match(['get'], 'download/all', 'Keys::download_all_Keys');
 	$routes->match(['get'], 'download/new', 'Keys::download_new_Keys');
-	$routes->match(['get'], 'deleteAll', 'Keys::deleteKeys');
-	$routes->match(['get'], 'deleteKeys', 'Keys::deleteKeys');
-	$routes->match(['get'], 'delete', 'Keys::deleteKeys');
 	$routes->match(['get'], 'start', 'Keys::startDate');
 });
 

@@ -112,28 +112,6 @@ class Keys extends BaseController
 
         return redirect()->back()->with('msgSuccess', 'success');
     }
-    public function deleteKeys()
-    {//delete all keys
-        $user = $this->user;
-        $model = $this->model;
-        $username = $user->username;
-        $data = $model->where('registrator =', $username)->delete();
-        return redirect()->back()->with('msgSuccess', 'success');
-    }
-
-    public function resetAllKeys()
-    {
-        $user = $this->user;
-        $model = $this->model;
-        $username = $user->username;
-
-        $model->where('registrator =', $username)->set('devices', NULL)->set('expired_date', NULL)
-            ->update();
-
-        return redirect()->back()->with('msgSuccess', 'success');
-
-    }
-
     public function startDate()
     {//Un-used Keys
         echo date('Y-m-d H:i:s');

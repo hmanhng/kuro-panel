@@ -40,8 +40,6 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
 <!-- Custom styles for this template-->
 
 <style>
-    @import 'https://fonts.googleapis.com/css?family=Nova+Mono|Eczar';
-
     #exp {
         /* font-family: 'popins', monospace;*/
         text-align: center;
@@ -62,6 +60,25 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
     .hover-shadow:hover {
         transform: translateY(-5px);
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+
+    @media (max-width: 768px) {
+        #exp {
+            font-size: 14px;
+            line-height: 1.4;
+            display: block;
+            white-space: normal;
+        }
+        .card .h5 {
+            font-size: 1rem;
+        }
+        .card .text-xs {
+            font-size: .7rem !important;
+        }
+        .table td,
+        .table th {
+            white-space: nowrap;
+        }
     }
 </style>
 
@@ -143,22 +160,22 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
 
 <div class="row mt-4">
     <div class="col-lg-4">
-        <div class="card bg-primary shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
             <div class="card-header text-center font-weight-bold text-primary">
-                𝐈𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧
+                Information
             </div>
             <div class="card-body">
                 <ul class="list-group list-hover mb-3">
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        ʀᴏʟᴇ
+                        Role
                         <span class="badge text-dark">
                             <?= getLevel($user->level) ?>
                         </span>
                     </li>
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        ʙᴀʟᴀɴᴄᴇ
+                        Balance
                         <span class="badge text-dark">
                             $<?= $user->saldo ?>
                         </span>
@@ -167,14 +184,14 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
                 <ul class="list-group">
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        ʟᴏɢɪɴ ᴛɪᴍᴇ
+                        Login Time
                         <span class="badge text-dark">
                             <?= $time::parse(session()->time_since)->humanize() ?>
                         </span>
                     </li>
                     <li
                         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        ᴀᴜᴛᴏ ʟᴏɢ-ᴏᴜᴛ
+                        Auto Logout
                         <span class="badge text-dark">
                             <?= $time::now()->difference($time::parse(session()->time_login))->humanize() ?>
                         </span>
@@ -186,7 +203,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
     <div class="col-lg-8">
         <div class="card shadow h-100 py-2">
             <div class="card-header text-center font-weight-bold text-primary">
-                𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝙆𝙚𝙮𝙨
+                Created Keys
             </div>
             <div class="card-body">
 
@@ -219,7 +236,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
 <div class="row mt-4">
 
     <div class="col-lg-4">
-        <div class="card bg-primary shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
             <div class="card-header text-center font-weight-bold text-primary">
                 MY Ip Address
             </div>
@@ -245,7 +262,7 @@ $getDateTime = date("F d, Y H:i:s", $dateTime);
     </div>
 
     <div class="col-lg-8">
-        <div class="card bg-primary shadow h-100 py-2">
+        <div class="card shadow h-100 py-2">
             <div class="card-header text-center font-weight-bold text-primary">
                 Key Information
             </div>

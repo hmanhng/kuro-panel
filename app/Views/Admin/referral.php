@@ -1,12 +1,47 @@
 <?= $this->extend('Layout/Starter') ?>
 
 <?= $this->section('content') ?>
+<style>
+    .referral-money-group {
+        display: flex;
+        align-items: stretch;
+        border: 2px solid #1f232b;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fffdf9;
+        box-shadow: 3px 3px 0 rgba(31, 35, 43, 0.35);
+    }
+
+    .referral-money-group:focus-within {
+        box-shadow: 0 0 0 0.2rem rgba(216, 103, 41, 0.2), 3px 3px 0 rgba(31, 35, 43, 0.35);
+    }
+
+    .referral-money-symbol {
+        min-width: 2.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-family: "IBM Plex Mono", monospace;
+        background: #f7e9d6;
+        color: #1f232b;
+        border-right: 2px solid #1f232b;
+    }
+
+    .referral-money-input {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        min-height: 2.6rem;
+    }
+</style>
 <div class="row">
     <div class="col-lg-12">
         <?= $this->include('Layout/msgStatus') ?>
     </div>
     <div class="col-lg-4 mb-3">
-        <div class="card card bg-gradient-light shadow h-10 py-2">
+        <div class="card shadow h-10 py-2">
             <div class="card-body h5 text-dark p-3">
                 Create <?= $title ?>
             </div>
@@ -15,9 +50,9 @@
 
                 <div class="form-group mb-3">
                     <label for="set_saldo">You can set with multiple saldo</label>
-                    <div class="input-group mt-2">
-                        <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
-                        <input type="number" class="form-control" name="set_saldo" id="set_saldo" minlength="1"
+                    <div class="input-group mt-2 referral-money-group">
+                        <span class="referral-money-symbol">$</span>
+                        <input type="number" class="form-control referral-money-input" name="set_saldo" id="set_saldo" minlength="1"
                             maxlength="11" value="5">
                     </div>
                     <?php if ($validation->hasError('set_saldo')): ?>
@@ -50,7 +85,7 @@
     </div>
     <div class="col-lg-8">
         <?php if ($code): ?>
-            <div class="card card bg-gradient-light shadow h-10 py-3 mb-3">
+            <div class="card shadow h-10 py-3 mb-3">
                 <div class="card-body h5 text-dark p-3">
                     Referral Created <br>Total - <?= $total_code ?>
                 </div>

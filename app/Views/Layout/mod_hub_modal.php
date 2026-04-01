@@ -1,15 +1,14 @@
 <?php if (isset($user) && ((int) $user->level === 1 || (int) $user->level === 2)): ?>
 <div class="modal fade" id="modHubModal" tabindex="-1" role="dialog" aria-labelledby="modHubModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white py-3">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header py-3">
                 <h5 class="modal-title font-weight-bold" id="modHubModalLabel">
                     <i class="fas fa-sliders-h mr-2"></i>Mod Management Center
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0 text-dark">
-                <div id="modHubAjaxStatus" class="px-3 pt-3 d-none"></div>
                 <?= form_open('Server') ?>
                 <input type="hidden" name="status_form" value="1">
                 <div class="list-group list-group-flush shadow-sm">
@@ -34,7 +33,6 @@
                                 type="text"
                                 name="myInput"
                                 class="form-control form-control-sm bg-light border-0 px-3 py-2"
-                                style="border-radius: 10px;"
                                 value="<?= esc(old('myInput') ?? '') ?>"
                                 placeholder="<?= esc(($onoff['myinput'] ?? '') !== '' ? $onoff['myinput'] : 'Maintenance Message...') ?>"
                                 onblur="modHubSubmitForm(this.form)">
@@ -72,7 +70,6 @@
                                 type="text"
                                 name="_ftext_value"
                                 class="form-control form-control-sm bg-light border-0 px-3 py-2"
-                                style="border-radius: 10px;"
                                 value="<?= esc(old('_ftext_value') ?? '') ?>"
                                 placeholder="<?= esc(($ftext['_ftext'] ?? '') !== '' ? $ftext['_ftext'] : 'Floating text context') ?>"
                                 onblur="modHubSubmitForm(this.form)">
@@ -136,7 +133,6 @@
                                 type="text"
                                 name="modname"
                                 class="form-control form-control-sm bg-light border-0 px-3 py-2"
-                                style="border-radius: 10px;"
                                 value="<?= esc(old('modname') ?? '') ?>"
                                 placeholder="<?= esc(($row['modname'] ?? '') !== '' ? $row['modname'] : 'Enter mod name') ?>"
                                 onblur="modHubSubmitForm(this.form)">
@@ -153,11 +149,59 @@
                 </div>
             </div>
             <div class="modal-footer bg-light border-0 py-2">
-                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if (isset($user) && ((int) $user->level === 1 || (int) $user->level === 2)): ?>
+<div id="modHubToast" class="mod-hub-toast" role="status" aria-live="polite" aria-atomic="true">
+    <span id="modHubToastText">Updated successfully.</span>
+</div>
+<style>
+.mod-hub-toast{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    z-index:2000;
+    max-width:min(420px, calc(100vw - 24px));
+    padding:12px 16px;
+    border:2px solid #1f232b;
+    border-radius:12px;
+    box-shadow:4px 4px 0 rgba(20, 22, 29, 0.85);
+    background:#ebfff3;
+    color:#116a49;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(10px);
+    transition:opacity .18s ease, transform .18s ease;
+}
+.mod-hub-toast.is-visible{
+    opacity:1;
+    transform:translateY(0);
+}
+.mod-hub-toast.is-success{
+    background:#d9f8e8;
+    color:#0c6a45;
+}
+.mod-hub-toast.is-error{
+    background:#ffe4df;
+    color:#a22a1b;
+}
+@media (max-width: 576px){
+    .mod-hub-toast{
+        right:12px;
+        bottom:12px;
+    }
+}
+
+.mod-hub-anim-target{
+    will-change:max-height, opacity, transform;
+}
+</style>
 <?php endif; ?>
 
 <?php if (session()->getFlashdata('reopen_mod_hub')): ?>
@@ -194,7 +238,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    var statusBox = document.getElementById('modHubAjaxStatus');
+    var toastBox = document.getElementById('modHubToast');
+    var toastText = document.getElementById('modHubToastText');
+    var toastTimer = null;
+    var sectionTimers = new WeakMap();
     var controlBlock = document.getElementById('modHubControlBlock');
     var restrictedBlock = document.getElementById('modHubRestrictedBlock');
     var floatingEditorWrap = document.getElementById('floatingEditorWrap');
@@ -202,12 +249,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var forms = modalEl.querySelectorAll('form');
 
     function showStatus(message, isOk) {
-        if (!statusBox) {
+        if (!toastBox || !toastText) {
             return;
         }
-        statusBox.classList.remove('d-none', 'alert-success', 'alert-danger');
-        statusBox.classList.add('alert', isOk ? 'alert-success' : 'alert-danger');
-        statusBox.textContent = message;
+        toastBox.classList.remove('is-success', 'is-error');
+        toastBox.classList.add(isOk ? 'is-success' : 'is-error', 'is-visible');
+        toastText.textContent = message;
+        if (toastTimer) {
+            clearTimeout(toastTimer);
+        }
+        toastTimer = setTimeout(function () {
+            toastBox.classList.remove('is-visible');
+        }, 3200);
     }
 
     function refreshCsrf(name, hash) {
@@ -224,6 +277,62 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             input.value = hash;
         });
+    }
+
+    function animateSection(section, shouldShow) {
+        if (!section) {
+            return;
+        }
+
+        var computedDisplay = window.getComputedStyle(section).display;
+        var currentlyShown = computedDisplay !== 'none';
+        if (currentlyShown === shouldShow) {
+            return;
+        }
+
+        section.classList.add('mod-hub-anim-target');
+
+        var oldTimer = sectionTimers.get(section);
+        if (oldTimer) {
+            clearTimeout(oldTimer);
+        }
+
+        section.style.overflow = 'hidden';
+        section.style.transition = 'max-height .24s ease, opacity .2s ease, transform .24s ease';
+
+        if (shouldShow) {
+            section.style.display = '';
+            section.style.maxHeight = '0px';
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(-6px)';
+
+            requestAnimationFrame(function () {
+                var targetHeight = section.scrollHeight;
+                section.style.maxHeight = targetHeight + 'px';
+                section.style.opacity = '1';
+                section.style.transform = 'translateY(0)';
+            });
+        } else {
+            section.style.maxHeight = section.scrollHeight + 'px';
+            section.style.opacity = '1';
+            section.style.transform = 'translateY(0)';
+            section.offsetHeight;
+            section.style.maxHeight = '0px';
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(-6px)';
+        }
+
+        var timer = setTimeout(function () {
+            section.style.transition = '';
+            section.style.overflow = '';
+            section.style.maxHeight = '';
+            section.style.opacity = '';
+            section.style.transform = '';
+            section.style.display = shouldShow ? '' : 'none';
+            sectionTimers.delete(section);
+        }, 280);
+
+        sectionTimers.set(section, timer);
     }
 
     forms.forEach(function (form) {
@@ -258,26 +367,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (typeof data.maintenance !== 'undefined') {
                     var isOn = data.maintenance === 'on';
-                    if (controlBlock) {
-                        controlBlock.style.display = isOn ? 'none' : '';
-                    }
-                    if (restrictedBlock) {
-                        restrictedBlock.style.display = isOn ? '' : 'none';
-                    }
+                    animateSection(controlBlock, !isOn);
+                    animateSection(restrictedBlock, isOn);
                 }
 
                 if (typeof data.floatingEnabled !== 'undefined') {
                     var floatingOn = !!data.floatingEnabled;
-                    if (floatingEditorWrap) {
-                        floatingEditorWrap.style.display = floatingOn ? '' : 'none';
-                    }
+                    animateSection(floatingEditorWrap, floatingOn);
                 }
 
                 if (typeof data.safeMode !== 'undefined') {
                     var safeOn = !!data.safeMode;
-                    if (modFeaturesSection) {
-                        modFeaturesSection.style.display = safeOn ? '' : 'none';
-                    }
+                    animateSection(modFeaturesSection, safeOn);
                 }
             })
             .catch(function () {
